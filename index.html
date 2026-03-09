@@ -1,0 +1,1041 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Weekly Capacity Planner</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Noto+Sans+TC:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #EDE8DF;
+    --card: #3D4A5C;
+    --card-light: #4A5A70;
+    --text-dark: #2C3A4A;
+    --text-mid: #5A6A7A;
+    --text-light: #8A9AAA;
+    --warm-yellow: #E8B84B;
+    --warm-amber: #edabac;
+    --warm-red: #d4888a;
+    --card-text: #D8E4F0;
+    --card-subtext: #8A9EBA;
+    --accent: #E8B84B;
+    --divider: #D5CFC4;
+    --tag-bg: rgba(255,255,255,0.08);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    font-family: 'Noto Sans TC', sans-serif;
+    font-size: 16px;
+    color: var(--text-dark);
+    min-height: 100vh;
+    padding: 48px 40px;
+  }
+
+  header {
+    margin-bottom: 40px;
+  }
+
+  header h1 {
+    font-family: 'DM Mono', monospace;
+    font-size: 28px;
+    font-weight: 400;
+    letter-spacing: 0.04em;
+    color: var(--text-dark);
+  }
+
+  header p {
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    color: var(--text-light);
+    margin-top: 4px;
+    letter-spacing: 0.05em;
+  }
+
+  hr.divider {
+    border: none;
+    border-top: 1px solid var(--divider);
+    margin: 0 0 36px 0;
+  }
+
+  .layout {
+    display: grid;
+    grid-template-columns: 1fr 380px;
+    gap: 28px;
+    align-items: start;
+  }
+
+  /* ── LEFT PANEL ── */
+  .left-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  .section-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    color: var(--text-light);
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+
+  /* Week selector */
+  .week-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .week-nav {
+    background: none;
+    border: 1px solid var(--divider);
+    border-radius: 6px;
+    width: 32px; height: 32px;
+    cursor: pointer;
+    color: var(--text-mid);
+    font-size: 16px;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.15s;
+  }
+  .week-nav:hover { background: white; border-color: var(--text-mid); }
+
+  .week-display {
+    font-family: 'DM Mono', monospace;
+    font-size: 14px;
+    color: var(--text-dark);
+    min-width: 180px;
+  }
+
+  /* Day cards grid */
+  .days-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 10px;
+  }
+
+  .day-card {
+    background: var(--card);
+    border-radius: 12px;
+    padding: 16px 14px;
+    position: relative;
+    transition: transform 0.15s;
+  }
+  .day-card:hover { transform: translateY(-2px); }
+
+  .day-card.day-off {
+    background: rgba(61,74,92,0.35);
+    opacity: 0.6;
+  }
+
+  .day-name {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    color: var(--card-subtext);
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+
+  .day-date {
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    color: var(--card-text);
+    margin-bottom: 14px;
+  }
+
+  .ticket-count {
+    font-family: 'DM Mono', monospace;
+    font-size: 32px;
+    font-weight: 500;
+    color: #ffffff;
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+
+  .day-card.day-off .ticket-count {
+    color: var(--card-subtext);
+    font-size: 18px;
+  }
+
+  .ticket-label {
+    font-size: 10px;
+    color: var(--card-subtext);
+    letter-spacing: 0.06em;
+  }
+
+  .meeting-badge {
+    position: absolute;
+    top: 12px; right: 12px;
+    background: var(--tag-bg);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 20px;
+    padding: 3px 8px;
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: var(--card-subtext);
+  }
+
+  .meeting-badge.warn { color: var(--warm-amber); border-color: rgba(237,171,172,0.4); }
+  .meeting-badge.danger { color: #d4888a; border-color: rgba(212,136,138,0.4); }
+
+  .reduction-note {
+    font-size: 10px;
+    color: var(--warm-amber);
+    margin-top: 6px;
+    letter-spacing: 0.03em;
+  }
+
+  /* Total bar */
+  .total-bar {
+    background: #f0eeeb;
+    border-radius: 12px;
+    padding: 18px 20px;
+    display: flex;
+    flex-direction: column;
+    border: 1px solid var(--divider);
+  }
+
+  .total-bar .label {
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    color: #2C3A4A;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    font-weight: 500;
+  }
+
+  .total-bar .number {
+    font-family: 'DM Mono', monospace;
+    font-size: 28px;
+    font-weight: 500;
+    color: #2C3A4A;
+  }
+
+  .base-chip {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: #ffffff;
+    letter-spacing: 0.05em;
+    background: #3D4A5C;
+    border-radius: 20px;
+    padding: 4px 12px;
+  }
+
+  .total-bar .breakdown {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: #ffffff;
+    text-align: right;
+    opacity: 0.7;
+    white-space: pre-line;
+  }
+
+  .base-row {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+    flex-wrap: wrap;
+  }
+
+  /* ── RIGHT PANEL ── */
+  .right-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    position: sticky;
+    top: 24px;
+  }
+
+  .input-card {
+    background: white;
+    border-radius: 14px;
+    padding: 22px;
+    border: 1px solid var(--divider);
+  }
+
+  .input-card h3 {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-light);
+    margin-bottom: 16px;
+  }
+
+  .field-row {
+    margin-bottom: 14px;
+  }
+
+  .field-row label {
+    display: block;
+    font-size: 11px;
+    color: var(--text-mid);
+    margin-bottom: 6px;
+    letter-spacing: 0.04em;
+  }
+
+  .field-row input, .field-row select, .field-row textarea {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--divider);
+    border-radius: 8px;
+    padding: 9px 12px;
+    font-family: 'Noto Sans TC', sans-serif;
+    font-size: 13px;
+    color: var(--text-dark);
+    outline: none;
+    transition: border-color 0.15s;
+    resize: none;
+  }
+  .field-row input:focus, .field-row select:focus, .field-row textarea:focus {
+    border-color: var(--text-mid);
+  }
+
+  /* Meeting hours per day */
+  .meeting-inputs {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 8px;
+  }
+
+  .meeting-input-wrap {
+    text-align: center;
+  }
+
+  .meeting-input-wrap span {
+    display: block;
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: var(--text-light);
+    margin-bottom: 4px;
+    letter-spacing: 0.08em;
+  }
+
+  .meeting-input-wrap input {
+    text-align: center;
+    padding: 7px 4px;
+    font-family: 'DM Mono', monospace;
+    font-size: 14px;
+  }
+
+  /* Day off toggles */
+  .dayoff-toggles {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 8px;
+  }
+
+  .toggle-btn {
+    text-align: center;
+    padding: 8px 4px;
+    border-radius: 8px;
+    border: 1px solid var(--divider);
+    background: var(--bg);
+    cursor: pointer;
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: var(--text-mid);
+    letter-spacing: 0.06em;
+    transition: all 0.15s;
+    user-select: none;
+  }
+  .toggle-btn.off {
+    background: #a0a0a0;
+    border-color: #a0a0a0;
+    color: #ffffff;
+    text-decoration: line-through;
+  }
+
+  .generate-btn {
+    width: 100%;
+    background: #f2cb86;
+    color: #2C3A4A;
+    border: none;
+    border-radius: 10px;
+    padding: 14px;
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    letter-spacing: 0.08em;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-transform: uppercase;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+  .generate-btn:hover:not(:disabled) {
+    background: #eabd6e;
+    transform: translateY(-1px);
+  }
+  .generate-btn:active:not(:disabled) { transform: translateY(0); }
+  .generate-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  .spinner {
+    width: 14px; height: 14px;
+    border: 2px solid rgba(44,58,74,0.3);
+    border-top-color: #2C3A4A;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    display: none;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .status-bar {
+    border-radius: 10px;
+    padding: 12px 14px;
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.04em;
+    display: none;
+    gap: 8px;
+    align-items: flex-start;
+  }
+  .status-bar.success {
+    background: #edf7ed;
+    color: #2d6a2d;
+    border: 1px solid #b8dfb8;
+    display: flex;
+  }
+  .status-bar.error {
+    background: #fdf0f0;
+    color: #8b2020;
+    border: 1px solid #f0b8b8;
+    display: flex;
+  }
+  .status-bar.loading {
+    background: #f5f3ef;
+    color: var(--text-mid);
+    border: 1px solid var(--divider);
+    display: flex;
+    align-items: center;
+  }
+
+  .webhook-field {
+    margin-bottom: 14px;
+  }
+  .webhook-field label {
+    display: block;
+    font-size: 11px;
+    color: var(--text-mid);
+    margin-bottom: 6px;
+    letter-spacing: 0.04em;
+  }
+  .webhook-input-row {
+    display: flex;
+    gap: 6px;
+  }
+  .webhook-input-row input {
+    flex: 1;
+    background: var(--bg);
+    border: 1px solid var(--divider);
+    border-radius: 8px;
+    padding: 9px 12px;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--text-dark);
+    outline: none;
+  }
+  .webhook-input-row input:focus { border-color: var(--text-mid); }
+  .webhook-save-btn {
+    background: var(--card);
+    color: var(--card-text);
+    border: none;
+    border-radius: 8px;
+    padding: 9px 14px;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.15s;
+  }
+  .webhook-save-btn:hover { background: var(--card-light); }
+
+  /* Preview list */
+
+  .save-hint {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: #6DC06D;
+    margin-top: 5px;
+    min-height: 16px;
+  }
+
+  @media (max-width: 900px) {
+    .layout { grid-template-columns: 1fr; }
+    .right-panel { position: static; }
+    body { padding: 32px 20px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Weekly Capacity Planner.</h1>
+  <p id="current-year">2026</p>
+</header>
+<hr class="divider">
+
+<div class="layout">
+  <!-- SINGLE COLUMN -->
+  <div class="right-panel" style="width:100%; max-width:680px; margin:0 auto;">
+    <div class="input-card">
+      <h3 id="settings-title">設定</h3>
+
+      <!-- 週次選擇 -->
+      <div class="field-row">
+        <label>選擇週次</label>
+        <div class="week-row">
+          <button class="week-nav" onclick="changeWeek(-1)">‹</button>
+          <div class="week-display" id="week-display">—</div>
+          <button class="week-nav" onclick="changeWeek(1)">›</button>
+        </div>
+      </div>
+      <hr style="border:none; border-top:1px solid var(--divider); margin: 4px 0 16px;">
+
+      <!-- Webhook URL 設定 -->
+      <div class="webhook-field">
+        <label>N8N Webhook URL</label>
+        <div class="webhook-input-row">
+          <input type="text" id="webhook-url" placeholder="https://your-n8n.com/webhook/dbc-generate-tickets">
+          <button class="webhook-save-btn" onclick="saveWebhookUrl()">儲存</button>
+          <button class="webhook-save-btn" style="background:#4A6A5A;" onclick="testWebhook()">測試</button>
+        </div>
+        <div class="save-hint" id="webhook-hint"></div>
+      </div>
+      <hr style="border:none; border-top:1px solid var(--divider); margin: 4px 0 16px;">
+
+      <!-- ADMIN MODE: 設計師下拉 -->
+      <div id="admin-section">
+        <div class="field-row">
+          <label>負責設計師</label>
+          <select id="designer-select" onchange="onDesignerChange()">
+            <option value="">— 請選擇 —</option>
+            <option value="1a59b1f2-b650-4d70-a70d-6e0b333e8962">Joy</option>
+            <option value="78f9833b-e0d9-4b2a-b9e1-6a8c1b138159">Chelsea Chiu</option>
+            <option value="a8c01fe9-c537-4b12-83b3-47eaa06a5576">Mia Chang</option>
+            <option value="69cf63ce-3ee5-49f4-a13c-874e96255b68">Fish</option>
+            <option value="a279f278-667c-4b08-8eeb-c778fd89f082">Jason Chen</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- SELF MODE: 設定 -->
+      <div id="self-section" style="display:none;">
+        <div class="field-row">
+          <label>你是誰？</label>
+          <select id="self-designer-select" onchange="onSelfDesignerChange()">
+            <option value="">— 請選擇 —</option>
+            <option value="1a59b1f2-b650-4d70-a70d-6e0b333e8962">Joy</option>
+            <option value="78f9833b-e0d9-4b2a-b9e1-6a8c1b138159">Chelsea Chiu</option>
+            <option value="a8c01fe9-c537-4b12-83b3-47eaa06a5576">Mia Chang</option>
+            <option value="69cf63ce-3ee5-49f4-a13c-874e96255b68">Fish</option>
+            <option value="a279f278-667c-4b08-8eeb-c778fd89f082">Jason Chen</option>
+          </select>
+          <div class="save-hint" id="selfid-hint"></div>
+        </div>
+      </div>
+
+      <div class="field-row">
+        <label>每日預設票數（可自訂）</label>
+        <div class="meeting-inputs">
+          <div class="meeting-input-wrap"><span>MON</span><input type="number" id="base-0" min="1" max="10" value="4" oninput="onBaseChange(); recalc()"></div>
+          <div class="meeting-input-wrap"><span>TUE</span><input type="number" id="base-1" min="1" max="10" value="5" oninput="onBaseChange(); recalc()"></div>
+          <div class="meeting-input-wrap"><span>WED</span><input type="number" id="base-2" min="1" max="10" value="5" oninput="onBaseChange(); recalc()"></div>
+          <div class="meeting-input-wrap"><span>THU</span><input type="number" id="base-3" min="1" max="10" value="4" oninput="onBaseChange(); recalc()"></div>
+          <div class="meeting-input-wrap"><span>FRI</span><input type="number" id="base-4" min="1" max="10" value="5" oninput="onBaseChange(); recalc()"></div>
+        </div>
+      </div>
+
+      <div class="field-row">
+        <label>當週會議時數（每天，hr）</label>
+        <div class="meeting-inputs">
+          <div class="meeting-input-wrap"><span>MON</span><input type="number" id="meet-0" min="0" max="8" value="0" oninput="recalc()"></div>
+          <div class="meeting-input-wrap"><span>TUE</span><input type="number" id="meet-1" min="0" max="8" value="0" oninput="recalc()"></div>
+          <div class="meeting-input-wrap"><span>WED</span><input type="number" id="meet-2" min="0" max="8" value="0" oninput="recalc()"></div>
+          <div class="meeting-input-wrap"><span>THU</span><input type="number" id="meet-3" min="0" max="8" value="0" oninput="recalc()"></div>
+          <div class="meeting-input-wrap"><span>FRI</span><input type="number" id="meet-4" min="0" max="8" value="0" oninput="recalc()"></div>
+        </div>
+      </div>
+
+      <div class="field-row">
+        <label>請假日（點選切換）</label>
+        <div class="dayoff-toggles" id="dayoff-toggles"></div>
+      </div>
+
+    </div>
+
+    <!-- 總票數摘要 -->
+    <div class="total-bar" style="margin-top:12px;">
+      <div style="flex:1; display:flex; flex-direction:column; gap:8px;">
+        <div class="section-label" style="margin-bottom:4px;">每日量能票</div>
+        <div class="days-grid" id="days-grid-right" style="margin-bottom:12px;"></div>
+        <div class="label">本次要新增的總票數</div>
+        <div class="number" id="total-count">—</div>
+        <div class="base-row" id="base-chips-row"></div>
+      </div>
+    </div>
+
+    <button class="generate-btn" id="generate-btn" onclick="generateTickets()">
+      <div class="spinner" id="btn-spinner"></div>
+      <span id="btn-label">▸ 生成 DBC 空白票</span>
+    </button>
+
+    <div class="status-bar" id="status-bar"></div>
+
+    <div id="done-panel" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.4); z-index:999; display:none; align-items:center; justify-content:center;">
+      <div style="background:#fff; border-radius:24px; padding:48px 40px; text-align:center; max-width:360px; width:90%; box-shadow:0 20px 60px rgba(0,0,0,0.15);">
+        <div style="font-size:56px; margin-bottom:16px;">✓</div>
+        <div style="font-size:22px; font-weight:700; color:#2C3E50; margin-bottom:8px;" id="done-title">新增完成！</div>
+        <div style="font-size:13px; color:#7A8A9A; margin-bottom:28px;" id="done-sub"></div>
+        <button onclick="document.getElementById('done-panel').style.display='none'" style="background:#2C3E50; color:#fff; border:none; border-radius:12px; padding:12px 32px; font-size:14px; cursor:pointer; font-family:inherit;">關閉</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ── Mode detection ──
+  const IS_ADMIN = new URLSearchParams(window.location.search).has('admin');
+
+  // ── Config ──
+  const NOTION_DB_ID = 'c5fb7caccbb44973bf5e3be171effbc4';
+  const DEFAULT_WEBHOOK_URL = 'https://alleypin.app.n8n.cloud/webhook/dbc-generate-tickets';
+
+  const today = new Date();
+  const miaTickets = (today >= new Date('2026-04-20')) ? [2,2,2,2,2] : [1,1,1,1,1];
+
+  const DESIGNERS = [
+    { name: 'Joy',          notionId: '1a59b1f2-b650-4d70-a70d-6e0b333e8962', tickets: [4,5,5,4,5] },
+    { name: 'Chelsea Chiu', notionId: '78f9833b-e0d9-4b2a-b9e1-6a8c1b138159', tickets: [4,4,4,4,4] },
+    { name: 'Mia Chang',    notionId: 'a8c01fe9-c537-4b12-83b3-47eaa06a5576', tickets: miaTickets },
+    { name: 'Fish',         notionId: '69cf63ce-3ee5-49f4-a13c-874e96255b68', tickets: [4,5,5,5,5] },
+    { name: 'Jason Chen',   notionId: 'a279f278-667c-4b08-8eeb-c778fd89f082', tickets: [4,5,5,5,5] },
+  ];
+
+  // 台灣 2026 國定假日（行政院人事行政總處官方公告，僅週一到週五）
+  const TW_HOLIDAYS = new Set([
+    // 2026
+    '2026-01-01', // 元旦
+    '2026-02-16', // 除夕
+    '2026-02-17', // 春節初一
+    '2026-02-18', // 春節初二
+    '2026-02-19', // 春節初三
+    '2026-02-20', // 春節初四
+    '2026-02-27', // 228和平紀念日補假（2/28週六→補2/27週五）
+    '2026-04-03', // 兒童節補假（4/4週六→補4/3週五）
+    '2026-04-06', // 清明節補假（4/5週日→補4/6週一）
+    '2026-05-01', // 勞動節
+    '2026-06-19', // 端午節（週五）
+    '2026-09-25', // 中秋節（週五）
+    '2026-09-28', // 孔子誕辰/教師節（週一）
+    '2026-10-09', // 國慶日補假（10/10週六→補10/9週五）
+    '2026-10-26', // 台灣光復節補假（10/25週日→補10/26週一）
+    '2026-12-25', // 行憲紀念日（週五）
+  ]);
+
+  // ── Mode init ──
+  function initMode() {
+    if (IS_ADMIN) {
+      document.getElementById('admin-section').style.display = 'block';
+      document.getElementById('self-section').style.display = 'none';
+    } else {
+      document.getElementById('admin-section').style.display = 'none';
+      document.getElementById('self-section').style.display = 'block';
+      loadSelfSettings();
+    }
+  }
+
+  // ── localStorage (self mode) ──
+  function loadSelfSettings() {
+    const selfId = localStorage.getItem('dbc_self_id') || '';
+    const sel = document.getElementById('self-designer-select');
+    if (sel && selfId) {
+      sel.value = selfId;
+      // 根據選擇的設計師自動套用預設票數
+      const designer = DESIGNERS.find(d => d.notionId === selfId);
+      if (designer?.tickets) {
+        designer.tickets.forEach((val, i) => {
+          const el = document.getElementById(`base-${i}`);
+          if (el) el.value = val;
+        });
+      }
+    }
+  }
+
+  function onSelfDesignerChange() {
+    const sel = document.getElementById('self-designer-select');
+    const designer = DESIGNERS.find(d => d.notionId === sel.value);
+    if (designer) {
+      localStorage.setItem('dbc_self_id', designer.notionId);
+      if (designer.tickets) {
+        designer.tickets.forEach((val, i) => {
+          const el = document.getElementById(`base-${i}`);
+          if (el) el.value = val;
+        });
+        recalc();
+      }
+      const hint = document.getElementById('selfid-hint');
+      if (hint) { hint.textContent = '已儲存 ✓'; setTimeout(() => hint.textContent = '', 2000); }
+    }
+  }
+
+  function saveSelfId() {}
+
+  function saveSelfSettings() {
+    const token = document.getElementById('notion-token')?.value || '';
+    const tickets = [0,1,2,3,4].map(i => parseInt(document.getElementById(`base-${i}`)?.value) || 0);
+    localStorage.setItem('dbc_settings', JSON.stringify({ token, tickets }));
+    const hint = document.getElementById('token-hint');
+    if (hint) { hint.textContent = '已儲存 ✓'; setTimeout(() => hint.textContent = '', 2000); }
+  }
+
+  function onBaseChange() {
+    if (!IS_ADMIN) saveSelfSettings();
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    const tokenInput = document.getElementById('notion-token');
+    if (tokenInput) tokenInput.addEventListener('change', saveSelfSettings);
+  });
+
+  function onDesignerChange() {
+    const sel = document.getElementById('designer-select');
+    const designer = DESIGNERS.find(d => d.notionId === sel.value);
+    if (designer?.tickets) {
+      designer.tickets.forEach((val, i) => {
+        const el = document.getElementById(`base-${i}`);
+        if (el) el.value = val;
+      });
+      recalc();
+    }
+  }
+
+  const DAY_NAMES = ['MON', 'TUE', 'WED', 'THU', 'FRI'];
+  const DAY_ZH = ['週一', '週二', '週三', '週四', '週五'];
+
+  function getBaseTickets(i) {
+    return parseInt(document.getElementById(`base-${i}`)?.value) || [4,5,5,4,5][i];
+  }
+
+  let currentMonday = getThisMonday();
+  let dayOffState = [false, false, false, false, false];
+
+  // ── Init ──
+  document.getElementById('current-year').textContent = new Date().getFullYear();
+  initMode();
+  loadWebhookUrl();
+  buildDayOffToggles();
+  renderWeek();
+
+  function getThisMonday() {
+    const d = new Date();
+    const day = d.getDay();
+    // 先找本週一
+    const diff = (day === 0) ? -6 : 1 - day;
+    d.setDate(d.getDate() + diff);
+    // 預設下一週
+    d.setDate(d.getDate() + 7);
+    d.setHours(0,0,0,0);
+    return d;
+  }
+
+  function changeWeek(dir) {
+    currentMonday = new Date(currentMonday);
+    currentMonday.setDate(currentMonday.getDate() + dir * 7);
+    document.getElementById('done-panel').style.display = 'none';
+    renderWeek();
+  }
+
+  function fmt(d) {
+    return `${d.getMonth()+1}/${d.getDate()}`;
+  }
+
+  function fmtFull(d) {
+    return `${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,'0')}.${String(d.getDate()).padStart(2,'0')}`;
+  }
+
+  function getMeetingHours(i) {
+    return parseFloat(document.getElementById(`meet-${i}`).value) || 0;
+  }
+
+  function getDateStr(d) {
+    const y = d.getFullYear();
+    const m = String(d.getMonth()+1).padStart(2,'0');
+    const day = String(d.getDate()).padStart(2,'0');
+    return `${y}-${m}-${day}`;
+  }
+
+  function isHoliday(d) {
+    return TW_HOLIDAYS.has(getDateStr(d));
+  }
+
+  function calcTickets(base, hours) {
+    if (hours >= 6) return 1;
+    if (hours >= 5) return Math.max(1, base - 3);
+    if (hours >= 4) return Math.max(1, base - 2);
+    if (hours >= 3) return Math.max(1, base - 1);
+    return base;
+  }
+
+  function renderWeek() {
+    const friday = new Date(currentMonday);
+    friday.setDate(friday.getDate() + 4);
+    document.getElementById('week-display').textContent = `${fmtFull(currentMonday)} — ${fmtFull(friday)}`;
+    recalc();
+  }
+
+  function recalc() {
+    const grid = document.getElementById('days-grid-right');
+    if (!grid) return;
+    grid.innerHTML = '';
+    let total = 0;
+    let cardHTML = '';
+
+    for (let i = 0; i < 5; i++) {
+      const date = new Date(currentMonday);
+      date.setDate(date.getDate() + i);
+      const hours = getMeetingHours(i);
+      const isOff = dayOffState[i];
+      const holiday = isHoliday(date);
+      const isInactive = isOff || holiday;
+      const base = getBaseTickets(i);
+      const tickets = isInactive ? 0 : calcTickets(base, hours);
+      total += tickets;
+
+      const reduction = base - tickets;
+      let badgeClass = '';
+      if (hours >= 5) badgeClass = 'danger';
+      else if (hours >= 3) badgeClass = 'warn';
+
+      let reductionNote = '';
+      if (!isInactive && reduction > 0) {
+        reductionNote = `<div class="reduction-note">−${reduction} 會議</div>`;
+      }
+
+      let label = '張量能票';
+      if (isOff) label = '請假';
+      else if (holiday) label = '國定假日';
+
+      cardHTML += `
+        <div class="day-card ${isInactive ? 'day-off' : ''}">
+          <div class="day-name">${DAY_NAMES[i]}</div>
+          <div class="day-date">${fmt(date)}</div>
+          ${hours > 0 && !isInactive ? `<div class="meeting-badge ${badgeClass}">${hours}hr</div>` : ''}
+          ${holiday && !isOff ? `<div class="meeting-badge" style="color:#E8B84B;border-color:rgba(232,184,75,0.4);">假</div>` : ''}
+          <div class="ticket-count">${isInactive ? '—' : tickets}</div>
+          <div class="ticket-label">${label}</div>
+          ${reductionNote}
+        </div>
+      `;
+    }
+
+    grid.innerHTML = cardHTML;
+
+    document.getElementById('total-count').textContent = total;
+
+    const chipsRow = document.getElementById('base-chips-row');
+    if (chipsRow) {
+      chipsRow.innerHTML = DAY_NAMES.map((name, i) => {
+        const date = new Date(currentMonday);
+        date.setDate(date.getDate() + i);
+        const base = getBaseTickets(i);
+        const isOff = dayOffState[i];
+        const holiday = isHoliday(date);
+        const isInactive = isOff || holiday;
+        const actual = isInactive ? 0 : calcTickets(base, getMeetingHours(i));
+        const style = isInactive ? 'background:#a0a0a0;' : '';
+        return `<span class="base-chip" style="${style}">${name} ${isInactive ? (holiday ? '假' : '休') : actual+'張'}</span>`;
+      }).join('');
+    }
+  }
+
+  function buildDayOffToggles() {
+    const wrap = document.getElementById('dayoff-toggles');
+    DAY_NAMES.forEach((name, i) => {
+      const btn = document.createElement('div');
+      btn.className = 'toggle-btn';
+      btn.textContent = name;
+      btn.onclick = () => {
+        dayOffState[i] = !dayOffState[i];
+        btn.classList.toggle('off', dayOffState[i]);
+        recalc();
+      };
+      wrap.appendChild(btn);
+    });
+  }
+
+  // ── Webhook URL persistence ──
+  function loadWebhookUrl() {
+    const saved = localStorage.getItem('dbc_webhook_url') || DEFAULT_WEBHOOK_URL;
+    document.getElementById('webhook-url').value = saved;
+  }
+
+  function saveWebhookUrl() {
+    const url = document.getElementById('webhook-url').value.trim();
+    localStorage.setItem('dbc_webhook_url', url);
+    const hint = document.getElementById('webhook-hint');
+    hint.textContent = '已儲存 ✓';
+    setTimeout(() => hint.textContent = '', 2000);
+  }
+
+  async function testWebhook() {
+    const webhookUrl = document.getElementById('webhook-url').value.trim();
+    if (!webhookUrl) { setStatus('error', '⚠ 請先填入 Webhook URL'); return; }
+    setStatus('loading', '<div class="spinner" style="display:block;width:13px;height:13px;border:2px solid rgba(90,106,122,0.3);border-top-color:#5A6A7A;border-radius:50%;animation:spin 0.7s linear infinite;flex-shrink:0;"></div> 測試連線中…');
+    try {
+      // 送一個 ping payload，n8n 收到後會正常回應（不會建立 Notion 頁面，因為 designerId 是空的）
+      const res = await fetch(webhookUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ _ping: true, designerId: '', weekStart: '', meetingHours: [], dayOff: [], baseTickets: [] })
+      });
+      if (res.ok || res.status === 200) {
+        setStatus('success', `✓ Webhook 連線成功（HTTP ${res.status}）— N8N 有收到請求`);
+      } else {
+        setStatus('error', `⚠ Webhook 回應 HTTP ${res.status} — 請確認 workflow 已 Activate`);
+      }
+    } catch (err) {
+      setStatus('error', `✕ 連線失敗：${err.message}<br><span style="opacity:0.7;font-size:11px;">可能是 CORS、URL 錯誤，或 N8N 尚未啟動</span>`);
+    }
+  }
+
+  // ── Status helpers ──
+  function setStatus(type, html) {
+    const bar = document.getElementById('status-bar');
+    bar.className = 'status-bar ' + type;
+    bar.innerHTML = html;
+  }
+
+  function clearStatus() {
+    const bar = document.getElementById('status-bar');
+    bar.className = 'status-bar';
+    bar.innerHTML = '';
+  }
+
+  function setLoading(isLoading) {
+    const btn = document.getElementById('generate-btn');
+    const spinner = document.getElementById('btn-spinner');
+    const label = document.getElementById('btn-label');
+    btn.disabled = isLoading;
+    spinner.style.display = isLoading ? 'block' : 'none';
+    label.textContent = isLoading ? '建立中...' : '▸ 生成 DBC 空白票';
+  }
+
+  async function generateTickets() {
+    // 收集資料
+    const webhookUrl = document.getElementById('webhook-url').value.trim();
+    if (!webhookUrl) {
+      setStatus('error', '⚠ 請先填入 N8N Webhook URL');
+      return;
+    }
+
+    // 取得 designerId
+    let designerId = '';
+    if (IS_ADMIN) {
+      designerId = document.getElementById('designer-select')?.value || '';
+      if (!designerId) {
+        setStatus('error', '⚠ 請選擇負責設計師');
+        return;
+      }
+    } else {
+      designerId = document.getElementById('self-designer-select')?.value || '';
+      if (!designerId) {
+        setStatus('error', '⚠ 請先選擇你是誰');
+        return;
+      }
+    }
+
+    const baseTickets = [0,1,2,3,4].map(i => getBaseTickets(i));
+    const meetingHours = [0,1,2,3,4].map(i => getMeetingHours(i));
+    const y = currentMonday.getFullYear();
+    const m = String(currentMonday.getMonth() + 1).padStart(2, '0');
+    const d = String(currentMonday.getDate()).padStart(2, '0');
+    const weekStartISO = `${y}-${m}-${d}`;
+
+    // 確認有票要建立
+    const totalTickets = [0,1,2,3,4].reduce((sum, i) => {
+      const date = new Date(currentMonday);
+      date.setDate(date.getDate() + i);
+      if (dayOffState[i] || isHoliday(date)) return sum;
+      return sum + calcTickets(baseTickets[i], meetingHours[i]);
+    }, 0);
+
+    if (totalTickets === 0) {
+      setStatus('error', '⚠ 本週全部請假，無票可建立');
+      return;
+    }
+
+    setLoading(true);
+    setStatus('loading', '<div class="spinner" style="display:block;width:13px;height:13px;border:2px solid rgba(90,106,122,0.3);border-top-color:#5A6A7A;border-radius:50%;animation:spin 0.7s linear infinite;flex-shrink:0;margin-top:1px;"></div> 正在呼叫 N8N，建立 ' + totalTickets + ' 張票…');
+
+    try {
+      const payload = {
+        designerId,
+        weekStart: weekStartISO,
+        meetingHours,
+        dayOff: dayOffState,
+        baseTickets
+      };
+
+      const res = await fetch(webhookUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      if (!res.ok) {
+        const errText = await res.text().catch(() => '');
+        throw new Error(`HTTP ${res.status}${errText ? ': ' + errText.slice(0, 120) : ''}`);
+      }
+
+      const data = await res.json().catch(() => ({}));
+
+      // n8n 內部錯誤時仍回 200，但 body 會有 error 欄位
+      if (data.error || data.message?.toLowerCase().includes('error')) {
+        throw new Error(data.error || data.message || 'N8N workflow 內部錯誤');
+      }
+
+      // 確認 success 欄位（由節點4回傳），且 created 必須 > 0
+      if (data.success === false || (data.created !== undefined && data.created === 0)) {
+        throw new Error('N8N 回報失敗或建立數為 0，請檢查 workflow 執行記錄');
+      }
+
+      const created = totalTickets;
+
+      // 隱藏 status bar，顯示完成面板
+      document.getElementById('status-bar').className = 'status-bar';
+      const donePanel = document.getElementById('done-panel');
+      const y = currentMonday.getFullYear();
+      const mo = String(currentMonday.getMonth()+1).padStart(2,'0');
+      const d = String(currentMonday.getDate()).padStart(2,'0');
+      const fri = new Date(currentMonday); fri.setDate(fri.getDate()+4);
+      const fd = String(fri.getDate()).padStart(2,'0');
+      document.getElementById('done-title').textContent = `成功新增 ${created} 張空白票！`;
+      document.getElementById('done-sub').textContent = `${y}.${mo}.${d} — ${y}.${mo}.${fd}`;
+      donePanel.style.display = 'flex';
+    } catch (err) {
+      console.error(err);
+      const isCors = err.message.includes('Load failed') || err.message.includes('Failed to fetch') || err.message.includes('NetworkError');
+      setStatus('error',
+        isCors
+          ? `✕ CORS 或網路錯誤：無法連到 N8N<br><span style="opacity:0.7;font-size:11px;">請到 N8N Webhook 節點 → Settings → Allowed Origins 確認設為 <strong>*</strong>，且 workflow 已 Activate（用 Production URL）</span>`
+          : `✕ 呼叫失敗：${err.message}<br><span style="opacity:0.7;font-size:11px;">請確認 Webhook URL 正確且 N8N workflow 已啟動</span>`
+      );
+    } finally {
+      setLoading(false);
+    }
+  }
+
+
+</script>
+</body>
+</html>
