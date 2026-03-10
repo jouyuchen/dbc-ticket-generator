@@ -1094,14 +1094,14 @@
 
       const data = await res.json().catch(() => ({}));
 
-      // n8n 內部錯誤時仍回 200，但 body 會有 error 欄位
-      if (data.error || data.message?.toLowerCase().includes('error')) {
+      // n8n 回傳 success: false 或有 error 欄位時擋住
+      if (data.success === false || data.error) {
         throw new Error(data.error || data.message || 'N8N workflow 內部錯誤');
       }
 
-      // 確認 success 欄位（由節點4回傳），且 created 必須 > 0
-      if (data.success === false || (data.created !== undefined && data.created === 0)) {
-        throw new Error('N8N 回報失敗或建立數為 0，請檢查 workflow 執行記錄');
+      // 確認 created 必須 > 0
+      if (data.created !== undefined && data.created === 0) {
+        throw new Error('N8N 回報建立數為 0，請檢查 workflow 執行記錄');
       }
 
       const created = totalTickets;
