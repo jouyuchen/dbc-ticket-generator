@@ -653,6 +653,15 @@
         <button onclick="document.getElementById('done-panel').style.display='none'" style="background:#2C3E50; color:#fff; border:none; border-radius:12px; padding:12px 32px; font-size:14px; cursor:pointer; font-family:inherit;">關閉</button>
       </div>
     </div>
+
+    <div id="exists-panel" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.4); z-index:999; align-items:center; justify-content:center;">
+      <div style="background:#fff; border-radius:24px; padding:48px 40px; text-align:center; max-width:360px; width:90%; box-shadow:0 20px 60px rgba(0,0,0,0.15);">
+        <div style="font-size:56px; margin-bottom:16px;">⚠️</div>
+        <div style="font-size:20px; font-weight:700; color:#2C3E50; margin-bottom:12px;">本週之前已經新增過了喔！</div>
+        <div style="font-size:13px; color:#7A8A9A; margin-bottom:28px;">就不再重複新增了～</div>
+        <button onclick="document.getElementById('exists-panel').style.display='none'" style="background:#D95F3B; color:#fff; border:none; border-radius:12px; padding:12px 32px; font-size:14px; cursor:pointer; font-family:inherit;">了解</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -1120,11 +1129,17 @@
     } catch (err) {
       console.error(err);
       const isCors = err.message.includes('Load failed') || err.message.includes('Failed to fetch') || err.message.includes('NetworkError');
-      setStatus('error',
-        isCors
-          ? `✕ CORS 或網路錯誤：無法連到 N8N<br><span style="opacity:0.7;font-size:11px;">請到 N8N Webhook 節點 → Settings → Allowed Origins 確認設為 <strong>*</strong>，且 workflow 已 Activate（用 Production URL）</span>`
-          : `✕ 呼叫失敗：${err.message}<br><span style="opacity:0.7;font-size:11px;">請確認 Webhook URL 正確且 N8N workflow 已啟動</span>`
-      );
+      const isAlreadyExists = err.message.includes('已新增過了');
+      if (isAlreadyExists) {
+        document.getElementById('exists-panel').style.display = 'flex';
+      } else {
+        const isCors = err.message.includes('Load failed') || err.message.includes('Failed to fetch') || err.message.includes('NetworkError');
+        setStatus('error',
+          isCors
+            ? `✕ CORS 或網路錯誤：無法連到 N8N<br><span style="opacity:0.7;font-size:11px;">請到 N8N Webhook 節點 → Settings → Allowed Origins 確認設為 <strong>*</strong>，且 workflow 已 Activate（用 Production URL）</span>`
+            : `✕ 呼叫失敗：${err.message}<br><span style="opacity:0.7;font-size:11px;">請確認 Webhook URL 正確且 N8N workflow 已啟動</span>`
+        );
+      }
     } finally {
       setLoading(false);
     }
