@@ -1033,27 +1033,20 @@
       return;
     }
 
-    // 取得 designerId 和 operatorNote（記錄是誰操作）
+    // 取得 designerId
     let designerId = '';
-    let operatorNote = '';
     if (IS_ADMIN) {
       designerId = document.getElementById('designer-select')?.value || '';
       if (!designerId) {
         setStatus('error', '⚠ 請選擇負責設計師');
         return;
       }
-      const adminDesigner = DESIGNERS.find(d => d.notionId === designerId);
-      const targetName = adminDesigner ? adminDesigner.name : designerId;
-      operatorNote = `由 Joy（admin）幫 ${targetName} 生成`;
     } else {
       designerId = localStorage.getItem('dbc_self_id') || '';
       if (!designerId) {
         setStatus('error', '⚠ 請先選擇你是誰');
         return;
       }
-      const selfDesigner = DESIGNERS.find(d => d.notionId === designerId);
-      const selfName = selfDesigner ? selfDesigner.name : designerId;
-      operatorNote = `由 ${selfName} 自己生成`;
     }
 
     const baseTickets = [0,1,2,3,4].map(i => getBaseTickets(i));
@@ -1082,7 +1075,6 @@
     try {
       const payload = {
         designerId,
-        operatorNote,
         weekStart: weekStartISO,
         meetingHours,
         dayOff: dayOffState,
