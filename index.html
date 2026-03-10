@@ -1097,6 +1097,11 @@
       });
 
       if (!res.ok) {
+        // 嘗試先讀 JSON，可能是 n8n 回傳的結構化錯誤
+        const data = await res.json().catch(() => null);
+        if (data && data.error) {
+          throw new Error(data.error);
+        }
         const errText = await res.text().catch(() => '');
         throw new Error(`HTTP ${res.status}${errText ? ': ' + errText.slice(0, 120) : ''}`);
       }
