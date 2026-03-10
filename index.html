@@ -105,9 +105,11 @@
 
   .week-display {
     font-family: 'DM Mono', monospace;
-    font-size: 14px;
+    font-size: 20px;
+    font-weight: 600;
     color: var(--text-dark);
-    min-width: 180px;
+    min-width: 240px;
+    text-align: center;
   }
 
   /* Day cards grid */
@@ -315,14 +317,49 @@
     letter-spacing: 0.08em;
   }
 
-  .meeting-input-wrap input {
+  .meeting-input-wrap input,
+  .meeting-input-wrap select {
     text-align: center;
     padding: 7px 4px;
     font-family: 'DM Mono', monospace;
     font-size: 14px;
+    appearance: none;
+    -webkit-appearance: none;
+    cursor: pointer;
   }
 
   /* Day off toggles */
+  .designer-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 12px;
+    margin-top: 8px;
+  }
+
+  .designer-card {
+    background: var(--bg);
+    border: 2px solid transparent;
+    border-radius: 14px;
+    padding: 28px 12px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-dark);
+  }
+
+  .designer-card:hover {
+    border-color: var(--text-mid);
+    background: #fff;
+  }
+
+  .designer-card.selected {
+    border-color: var(--text-dark);
+    background: var(--text-dark);
+    color: #fff;
+  }
+
   .dayoff-toggles {
     display: grid;
     grid-template-columns: repeat(5, 1fr);
@@ -338,22 +375,22 @@
     cursor: pointer;
     font-family: 'DM Mono', monospace;
     font-size: 10px;
-    color: var(--text-mid);
+    color: #D95F3B;
     letter-spacing: 0.06em;
     transition: all 0.15s;
     user-select: none;
   }
   .toggle-btn.off {
-    background: #a0a0a0;
-    border-color: #a0a0a0;
+    background: #D95F3B;
+    border-color: #D95F3B;
     color: #ffffff;
     text-decoration: line-through;
   }
 
   .generate-btn {
     width: 100%;
-    background: #f2cb86;
-    color: #2C3A4A;
+    background: #D95F3B;
+    color: #ffffff;
     border: none;
     border-radius: 10px;
     padding: 14px;
@@ -364,6 +401,7 @@
     transition: all 0.2s;
     text-transform: uppercase;
     font-weight: 500;
+    margin-top: 20px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -487,109 +525,125 @@
 <div class="layout">
   <!-- SINGLE COLUMN -->
   <div class="right-panel" style="width:100%; max-width:680px; margin:0 auto;">
-    <div class="input-card">
-      <h3 id="settings-title">設定</h3>
 
-      <!-- 週次選擇 -->
-      <div class="field-row">
-        <label>選擇週次</label>
-        <div class="week-row">
-          <button class="week-nav" onclick="changeWeek(-1)">‹</button>
-          <div class="week-display" id="week-display">—</div>
-          <button class="week-nav" onclick="changeWeek(1)">›</button>
+    <!-- ── STEP 1：選擇身份 ── -->
+    <div id="step-1">
+      <div class="input-card">
+        <div style="text-align:center; padding: 12px 0 24px;">
+          <div style="font-family:'DM Mono',monospace; font-size:11px; letter-spacing:0.15em; color:var(--text-light); margin-bottom:12px;">STEP 1 / 2</div>
+          <h2 style="font-size:22px; font-weight:700; color:var(--text-dark); margin-bottom:6px;">請問你要新增誰的空白票？</h2>
+          <div style="font-size:13px; color:var(--text-mid);">此選擇 ＝ 最終 assign 給誰喔！</div>
         </div>
-      </div>
-      <hr style="border:none; border-top:1px solid var(--divider); margin: 4px 0 16px;">
-
-      <!-- Webhook URL 設定 -->
-      <div class="webhook-field">
-        <label>N8N Webhook URL</label>
-        <div class="webhook-input-row">
-          <input type="text" id="webhook-url" placeholder="https://your-n8n.com/webhook/dbc-generate-tickets">
-          <button class="webhook-save-btn" onclick="saveWebhookUrl()">儲存</button>
-          <button class="webhook-save-btn" style="background:#4A6A5A;" onclick="testWebhook()">測試</button>
+        <div id="select-hint" style="background:#F5F0E8; border-radius:10px; padding:12px 16px; font-size:13px; color:var(--text-mid); text-align:center; margin-bottom:16px;">
+          ▼ 請先選擇名字，才能繼續
         </div>
-        <div class="save-hint" id="webhook-hint"></div>
-      </div>
-      <hr style="border:none; border-top:1px solid var(--divider); margin: 4px 0 16px;">
 
-      <!-- ADMIN MODE: 設計師下拉 -->
-      <div id="admin-section">
-        <div class="field-row">
-          <label>負責設計師</label>
-          <select id="designer-select" onchange="onDesignerChange()">
-            <option value="">— 請選擇 —</option>
-            <option value="1a59b1f2-b650-4d70-a70d-6e0b333e8962">Joy</option>
-            <option value="78f9833b-e0d9-4b2a-b9e1-6a8c1b138159">Chelsea Chiu</option>
-            <option value="a8c01fe9-c537-4b12-83b3-47eaa06a5576">Mia Chang</option>
-            <option value="69cf63ce-3ee5-49f4-a13c-874e96255b68">Fish</option>
-            <option value="a279f278-667c-4b08-8eeb-c778fd89f082">Jason Chen</option>
-          </select>
+        <!-- SELF MODE -->
+        <div id="self-section">
+          <div class="designer-grid" id="designer-grid"></div>
+          <div class="save-hint" id="selfid-hint" style="text-align:center; margin-top:8px;"></div>
         </div>
-      </div>
 
-      <!-- SELF MODE: 設定 -->
-      <div id="self-section" style="display:none;">
-        <div class="field-row">
-          <label>你是誰？</label>
-          <select id="self-designer-select" onchange="onSelfDesignerChange()">
-            <option value="">— 請選擇 —</option>
-            <option value="1a59b1f2-b650-4d70-a70d-6e0b333e8962">Joy</option>
-            <option value="78f9833b-e0d9-4b2a-b9e1-6a8c1b138159">Chelsea Chiu</option>
-            <option value="a8c01fe9-c537-4b12-83b3-47eaa06a5576">Mia Chang</option>
-            <option value="69cf63ce-3ee5-49f4-a13c-874e96255b68">Fish</option>
-            <option value="a279f278-667c-4b08-8eeb-c778fd89f082">Jason Chen</option>
-          </select>
-          <div class="save-hint" id="selfid-hint"></div>
+        <!-- ADMIN MODE -->
+        <div id="admin-section" style="display:none;">
+          <div class="field-row">
+            <label>負責設計師</label>
+            <select id="designer-select" onchange="onDesignerChange()">
+              <option value="">— 請選擇 —</option>
+              <option value="1a59b1f2-b650-4d70-a70d-6e0b333e8962">Joy</option>
+              <option value="78f9833b-e0d9-4b2a-b9e1-6a8c1b138159">Chelsea Chiu</option>
+              <option value="a8c01fe9-c537-4b12-83b3-47eaa06a5576">Mia Chang</option>
+              <option value="69cf63ce-3ee5-49f4-a13c-874e96255b68">Fish</option>
+              <option value="a279f278-667c-4b08-8eeb-c778fd89f082">Jason Chen</option>
+            </select>
+          </div>
         </div>
-      </div>
 
-      <div class="field-row">
-        <label>每日預設票數（可自訂）</label>
-        <div class="meeting-inputs">
-          <div class="meeting-input-wrap"><span>MON</span><input type="number" id="base-0" min="1" max="10" value="4" oninput="onBaseChange(); recalc()"></div>
-          <div class="meeting-input-wrap"><span>TUE</span><input type="number" id="base-1" min="1" max="10" value="5" oninput="onBaseChange(); recalc()"></div>
-          <div class="meeting-input-wrap"><span>WED</span><input type="number" id="base-2" min="1" max="10" value="5" oninput="onBaseChange(); recalc()"></div>
-          <div class="meeting-input-wrap"><span>THU</span><input type="number" id="base-3" min="1" max="10" value="4" oninput="onBaseChange(); recalc()"></div>
-          <div class="meeting-input-wrap"><span>FRI</span><input type="number" id="base-4" min="1" max="10" value="5" oninput="onBaseChange(); recalc()"></div>
-        </div>
       </div>
-
-      <div class="field-row">
-        <label>當週會議時數（每天，hr）</label>
-        <div class="meeting-inputs">
-          <div class="meeting-input-wrap"><span>MON</span><input type="number" id="meet-0" min="0" max="8" value="0" oninput="recalc()"></div>
-          <div class="meeting-input-wrap"><span>TUE</span><input type="number" id="meet-1" min="0" max="8" value="0" oninput="recalc()"></div>
-          <div class="meeting-input-wrap"><span>WED</span><input type="number" id="meet-2" min="0" max="8" value="0" oninput="recalc()"></div>
-          <div class="meeting-input-wrap"><span>THU</span><input type="number" id="meet-3" min="0" max="8" value="0" oninput="recalc()"></div>
-          <div class="meeting-input-wrap"><span>FRI</span><input type="number" id="meet-4" min="0" max="8" value="0" oninput="recalc()"></div>
-        </div>
-      </div>
-
-      <div class="field-row">
-        <label>請假日（點選切換）</label>
-        <div class="dayoff-toggles" id="dayoff-toggles"></div>
-      </div>
-
+      <button class="generate-btn" id="step1-next-btn" onclick="goToStep2()" style="background:#D95F3B; color:#fff; opacity:0.4; pointer-events:none; margin-top:20px;">
+        下一步 →
+      </button>
     </div>
 
-    <!-- 總票數摘要 -->
-    <div class="total-bar" style="margin-top:12px;">
-      <div style="flex:1; display:flex; flex-direction:column; gap:8px;">
-        <div class="section-label" style="margin-bottom:4px;">每日量能票</div>
-        <div class="days-grid" id="days-grid-right" style="margin-bottom:12px;"></div>
-        <div class="label">本次要新增的總票數</div>
-        <div class="number" id="total-count">—</div>
-        <div class="base-row" id="base-chips-row"></div>
+    <!-- ── STEP 2：設定票數 ── -->
+    <div id="step-2" style="display:none;">
+      <div class="input-card">
+        <div style="display:flex; align-items:center; gap:12px; margin-bottom:20px;">
+          <button onclick="goToStep1()" style="background:none; border:1px solid var(--divider); border-radius:8px; padding:6px 12px; font-size:13px; cursor:pointer; color:var(--text-mid); font-family:inherit;">← 返回</button>
+          <div>
+            <div style="font-family:'DM Mono',monospace; font-size:11px; letter-spacing:0.15em; color:var(--text-light);">STEP 2 / 2</div>
+            <div style="font-size:15px; font-weight:600; color:var(--text-dark);" id="step2-name-display">—</div>
+          </div>
+        </div>
+
+        <!-- 週次選擇 -->
+        <div class="field-row">
+          <label>選擇週次</label>
+          <div class="week-row">
+            <button class="week-nav" onclick="changeWeek(-1)">‹</button>
+            <div class="week-display" id="week-display">—</div>
+            <button class="week-nav" onclick="changeWeek(1)">›</button>
+          </div>
+        </div>
+        <hr style="border:none; border-top:1px solid var(--divider); margin: 4px 0 16px;">
+
+        <!-- Webhook URL 設定 -->
+        <div class="webhook-field">
+          <label>N8N Webhook URL</label>
+          <div class="webhook-input-row">
+            <input type="text" id="webhook-url" placeholder="https://your-n8n.com/webhook/dbc-generate-tickets">
+            <button class="webhook-save-btn" onclick="saveWebhookUrl()">儲存</button>
+          </div>
+          <div class="save-hint" id="webhook-hint"></div>
+        </div>
+        <hr style="border:none; border-top:1px solid var(--divider); margin: 4px 0 16px;">
+
+        <div class="field-row">
+          <label>每日預設票數 <span style="font-weight:400; color:var(--text-light); font-size:11px;">（未來如需調整預設請聯絡 Joy）</span></label>
+          <div class="meeting-inputs">
+            <div class="meeting-input-wrap"><span>MON</span><select id="base-0" onchange="onBaseChange(); recalc()"><option>1</option><option>2</option><option>3</option><option selected>4</option><option>5</option><option>6</option><option>7</option><option>8</option></select></div>
+            <div class="meeting-input-wrap"><span>TUE</span><select id="base-1" onchange="onBaseChange(); recalc()"><option>1</option><option>2</option><option>3</option><option>4</option><option selected>5</option><option>6</option><option>7</option><option>8</option></select></div>
+            <div class="meeting-input-wrap"><span>WED</span><select id="base-2" onchange="onBaseChange(); recalc()"><option>1</option><option>2</option><option>3</option><option>4</option><option selected>5</option><option>6</option><option>7</option><option>8</option></select></div>
+            <div class="meeting-input-wrap"><span>THU</span><select id="base-3" onchange="onBaseChange(); recalc()"><option>1</option><option>2</option><option>3</option><option selected>4</option><option>5</option><option>6</option><option>7</option><option>8</option></select></div>
+            <div class="meeting-input-wrap"><span>FRI</span><select id="base-4" onchange="onBaseChange(); recalc()"><option>1</option><option>2</option><option>3</option><option>4</option><option selected>5</option><option>6</option><option>7</option><option>8</option></select></div>
+          </div>
+        </div>
+
+        <div class="field-row">
+          <label>當週會議時數（每天，hr）<span style="font-weight:400; color:var(--text-light); font-size:11px;">（非必填，但建議會議 ≥ 3hr 時減少一張）</span></label>
+          <div class="meeting-inputs">
+            <div class="meeting-input-wrap"><span>MON</span><select id="meet-0" onchange="recalc()"><option selected>0</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option><option>8</option></select></div>
+            <div class="meeting-input-wrap"><span>TUE</span><select id="meet-1" onchange="recalc()"><option selected>0</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option><option>8</option></select></div>
+            <div class="meeting-input-wrap"><span>WED</span><select id="meet-2" onchange="recalc()"><option selected>0</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option><option>8</option></select></div>
+            <div class="meeting-input-wrap"><span>THU</span><select id="meet-3" onchange="recalc()"><option selected>0</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option><option>8</option></select></div>
+            <div class="meeting-input-wrap"><span>FRI</span><select id="meet-4" onchange="recalc()"><option selected>0</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option><option>8</option></select></div>
+          </div>
+        </div>
+
+        <div class="field-row">
+          <label>休假日 <span style="font-weight:400; color:var(--text-light); font-size:11px;">（點選後，會直接移除預設的票數）</span></label>
+          <div class="dayoff-toggles" id="dayoff-toggles"></div>
+        </div>
       </div>
+
+      <!-- 總票數摘要 -->
+      <div class="total-bar" style="margin-top:12px;">
+        <div style="flex:1; display:flex; flex-direction:column; gap:8px;">
+          <div class="section-label" style="margin-bottom:4px;">每日量能票</div>
+          <div class="days-grid" id="days-grid-right" style="margin-bottom:12px;"></div>
+          <div class="label">本次要新增的總票數</div>
+          <div class="number" id="total-count">—</div>
+          <div class="base-row" id="base-chips-row"></div>
+        </div>
+      </div>
+
+      <button class="generate-btn" id="generate-btn" onclick="generateTickets()">
+        <div class="spinner" id="btn-spinner"></div>
+        <span id="btn-label">▸ 生成 DBC 空白票</span>
+      </button>
+
+      <div class="status-bar" id="status-bar"></div>
     </div>
-
-    <button class="generate-btn" id="generate-btn" onclick="generateTickets()">
-      <div class="spinner" id="btn-spinner"></div>
-      <span id="btn-label">▸ 生成 DBC 空白票</span>
-    </button>
-
-    <div class="status-bar" id="status-bar"></div>
 
     <div id="done-panel" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.4); z-index:999; display:none; align-items:center; justify-content:center;">
       <div style="background:#fff; border-radius:24px; padding:48px 40px; text-align:center; max-width:360px; width:90%; box-shadow:0 20px 60px rgba(0,0,0,0.15);">
@@ -647,46 +701,87 @@
     if (IS_ADMIN) {
       document.getElementById('admin-section').style.display = 'block';
       document.getElementById('self-section').style.display = 'none';
+      // admin 模式直接跳到 step2
+      document.getElementById('step-1').style.display = 'none';
+      document.getElementById('step-2').style.display = 'block';
     } else {
       document.getElementById('admin-section').style.display = 'none';
       document.getElementById('self-section').style.display = 'block';
+      buildDesignerGrid();
       loadSelfSettings();
     }
+  }
+
+  function buildDesignerGrid() {
+    const grid = document.getElementById('designer-grid');
+    if (!grid) return;
+    const placeholder = `<div class="designer-card placeholder-card" style="grid-column: 1 / -1; opacity:0.4; cursor:default; border: 2px dashed var(--text-light);">請選擇你的名字</div>`;
+    grid.innerHTML = placeholder + DESIGNERS.map(d => `
+      <div class="designer-card" data-id="${d.notionId}" onclick="selectDesigner('${d.notionId}')">
+        <div>${d.name}</div>
+      </div>
+    `).join('');
+  }
+
+  function selectDesigner(notionId) {
+    // 更新卡片 UI
+    document.querySelectorAll('.designer-card').forEach(c => {
+      c.classList.toggle('selected', c.dataset.id === notionId);
+    });
+    // 套用票數
+    const designer = DESIGNERS.find(d => d.notionId === notionId);
+    if (designer?.tickets) {
+      designer.tickets.forEach((val, i) => {
+        const el = document.getElementById(`base-${i}`);
+        if (el) el.value = val;
+      });
+    }
+    localStorage.setItem('dbc_self_id', notionId);
+    // 移除佔位卡片
+    const placeholder = document.querySelector('.placeholder-card');
+    if (placeholder) placeholder.remove();
+    // 隱藏提示框
+    const hint = document.getElementById('select-hint');
+    if (hint) hint.style.display = 'none';
+    // 啟用下一步按鈕
+    const btn = document.getElementById('step1-next-btn');
+    btn.style.opacity = '1';
+    btn.style.pointerEvents = 'auto';
+  }
+
+  function goToStep2() {
+    const selfId = localStorage.getItem('dbc_self_id') || '';
+    if (!selfId) return;
+    const designer = DESIGNERS.find(d => d.notionId === selfId);
+    document.getElementById('step2-name-display').textContent = designer ? designer.name : '—';
+    document.getElementById('step-1').style.display = 'none';
+    document.getElementById('step-2').style.display = 'block';
+    recalc();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function goToStep1() {
+    document.getElementById('step-2').style.display = 'none';
+    document.getElementById('step-1').style.display = 'block';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   // ── localStorage (self mode) ──
   function loadSelfSettings() {
     const selfId = localStorage.getItem('dbc_self_id') || '';
-    const sel = document.getElementById('self-designer-select');
-    if (sel && selfId) {
-      sel.value = selfId;
-      // 根據選擇的設計師自動套用預設票數
+    if (selfId) {
       const designer = DESIGNERS.find(d => d.notionId === selfId);
-      if (designer?.tickets) {
-        designer.tickets.forEach((val, i) => {
-          const el = document.getElementById(`base-${i}`);
-          if (el) el.value = val;
-        });
+      if (designer) {
+        setTimeout(() => {
+          selectDesigner(selfId);
+          const hint = document.getElementById('select-hint');
+          if (hint) hint.style.display = 'none';
+        }, 0);
       }
     }
   }
 
-  function onSelfDesignerChange() {
-    const sel = document.getElementById('self-designer-select');
-    const designer = DESIGNERS.find(d => d.notionId === sel.value);
-    if (designer) {
-      localStorage.setItem('dbc_self_id', designer.notionId);
-      if (designer.tickets) {
-        designer.tickets.forEach((val, i) => {
-          const el = document.getElementById(`base-${i}`);
-          if (el) el.value = val;
-        });
-        recalc();
-      }
-      const hint = document.getElementById('selfid-hint');
-      if (hint) { hint.textContent = '已儲存 ✓'; setTimeout(() => hint.textContent = '', 2000); }
-    }
-  }
+  function onSelfDesignerChange() {} // 保留相容性，改用 selectDesigner
 
   function saveSelfId() {}
 
@@ -947,7 +1042,7 @@
         return;
       }
     } else {
-      designerId = document.getElementById('self-designer-select')?.value || '';
+      designerId = localStorage.getItem('dbc_self_id') || '';
       if (!designerId) {
         setStatus('error', '⚠ 請先選擇你是誰');
         return;
