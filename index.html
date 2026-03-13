@@ -1133,12 +1133,19 @@
     const hasLeave = leaveGroups.length > 0;
 
     try {
+      // 國定假日也合併進 dayOff，讓 n8n 正確跳過
+      const dayOffWithHolidays = [0,1,2,3,4].map(i => {
+        const date = new Date(currentMonday);
+        date.setDate(date.getDate() + i);
+        return dayOffState[i] || isHoliday(date);
+      });
+
       const payload = {
         type: 'tickets',
         designerId,
         weekStart: weekStartISO,
         meetingHours,
-        dayOff: dayOffState,
+        dayOff: dayOffWithHolidays,
         baseTickets
       };
 
