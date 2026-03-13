@@ -643,6 +643,7 @@
       </button>
 
       <div class="status-bar" id="status-bar"></div>
+
     </div>
 
     <div id="done-panel" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.4); z-index:999; display:none; align-items:center; justify-content:center;">
@@ -662,6 +663,7 @@
         <button onclick="document.getElementById('exists-panel').style.display='none'" style="background:#D95F3B; color:#fff; border:none; border-radius:12px; padding:12px 32px; font-size:14px; cursor:pointer; font-family:inherit;">了解</button>
       </div>
     </div>
+
   </div>
 </div>
 
@@ -677,15 +679,15 @@
   const miaTickets = (today >= new Date('2026-04-20')) ? [2,2,2,2,2] : [1,1,1,1,1];
 
   const DESIGNERS = [
-    { name: 'Joy',          notionId: '1a59b1f2-b650-4d70-a70d-6e0b333e8962', tickets: [4,5,5,4,5] },
-    { name: 'Fish',         notionId: '69cf63ce-3ee5-49f4-a13c-874e96255b68', tickets: [4,5,5,5,5] },
-    { name: 'Jason',        notionId: 'a279f278-667c-4b08-8eeb-c778fd89f082', tickets: [4,5,5,5,5] },
-    { name: '太郎',          notionId: 'f1bf4e6e-e0d9-4462-a4f2-2129f2c22945', tickets: [3,4,4,4,3] },
-    { name: 'Grover Gao',   notionId: '2cad872b-594c-8107-830f-00022cb17db7', tickets: [3,2,3,2,2] },
-    { name: 'Alan',         notionId: '173d872b-594c-81ae-ad6f-000279032dac', tickets: [3,3,3,3,3] },
-    { name: '哲均',          notionId: 'cb682dc4-4099-42b8-ae35-240ed7789cd8', tickets: [6,6,5,5,4] },
-    { name: 'Chelsea Chiu', notionId: '78f9833b-e0d9-4b2a-b9e1-6a8c1b138159', tickets: [4,4,4,4,4] },
-    { name: 'Mia Chang',    notionId: 'a8c01fe9-c537-4b12-83b3-47eaa06a5576', tickets: miaTickets },
+    { name: 'Joy',          notionName: 'Joy',         notionId: '1a59b1f2-b650-4d70-a70d-6e0b333e8962', tickets: [4,5,5,4,5] },
+    { name: 'Fish',         notionName: 'fish chiu',   notionId: '69cf63ce-3ee5-49f4-a13c-874e96255b68', tickets: [4,5,5,5,5] },
+    { name: 'Jason',        notionName: 'Jason Chen',  notionId: 'a279f278-667c-4b08-8eeb-c778fd89f082', tickets: [4,5,5,5,5] },
+    { name: '太郎',          notionName: 'Hawk Chang',  notionId: 'f1bf4e6e-e0d9-4462-a4f2-2129f2c22945', tickets: [3,4,4,4,3] },
+    { name: 'Grover Gao',   notionName: 'Grover Gao',  notionId: '2cad872b-594c-8107-830f-00022cb17db7', tickets: [3,2,3,2,2] },
+    { name: 'Alan',         notionName: 'Alan',        notionId: '173d872b-594c-81ae-ad6f-000279032dac', tickets: [3,3,3,3,3] },
+    { name: '哲均',          notionName: '哲均',         notionId: 'cb682dc4-4099-42b8-ae35-240ed7789cd8', tickets: [6,6,5,5,4] },
+    { name: 'Chelsea Chiu', notionName: 'Chelsea Chiu',notionId: '78f9833b-e0d9-4b2a-b9e1-6a8c1b138159', tickets: [4,4,4,4,4] },
+    { name: 'Mia Chang',    notionName: 'Mia Chang',   notionId: 'a8c01fe9-c537-4b12-83b3-47eaa06a5576', tickets: miaTickets },
   ];
 
   // 台灣 2026 國定假日（行政院人事行政總處官方公告，僅週一到週五）
@@ -1046,20 +1048,25 @@
       return;
     }
 
-    // 取得 designerId
+    // 取得 designerId 和 notionName
     let designerId = '';
+    let notionName = '';
     if (IS_ADMIN) {
       designerId = document.getElementById('designer-select')?.value || '';
       if (!designerId) {
         setStatus('error', '⚠ 請選擇負責設計師');
         return;
       }
+      const d = DESIGNERS.find(d => d.notionId === designerId);
+      notionName = d ? d.notionName : '';
     } else {
       designerId = localStorage.getItem('dbc_self_id') || '';
       if (!designerId) {
         setStatus('error', '⚠ 請先選擇你是誰');
         return;
       }
+      const d = DESIGNERS.find(d => d.notionId === designerId);
+      notionName = d ? d.notionName : '';
     }
 
     const baseTickets = [0,1,2,3,4].map(i => getBaseTickets(i));
@@ -1085,8 +1092,49 @@
     setLoading(true);
     setStatus('loading', '<div class="spinner" style="display:block;width:13px;height:13px;border:2px solid rgba(90,106,122,0.3);border-top-color:#5A6A7A;border-radius:50%;animation:spin 0.7s linear infinite;flex-shrink:0;margin-top:1px;"></div> 正在呼叫 N8N，建立 ' + totalTickets + ' 張票…');
 
+    // ── 計算休假票群組（國定假日直接跳過，前後請假算同一組）──
+    function getLeaveGroups() {
+      // 先收集所有「使用者選休假 且 非國定假日」的日期
+      const leaveDates = [];
+      for (let i = 0; i < 5; i++) {
+        const date = new Date(currentMonday);
+        date.setDate(date.getDate() + i);
+        if (dayOffState[i] && !isHoliday(date)) {
+          leaveDates.push({ i, dateStr: date.toISOString().split('T')[0] });
+        }
+      }
+      if (!leaveDates.length) return [];
+
+      // 把連續索引（忽略中間的國定假日）分組
+      // 規則：如果兩個 leaveDates 之間，中間全是國定假日，就算同一組
+      const groups = [];
+      let group = [leaveDates[0]];
+      for (let k = 1; k < leaveDates.length; k++) {
+        const prev = leaveDates[k - 1];
+        const curr = leaveDates[k];
+        // 檢查 prev.i+1 ~ curr.i-1 中間有沒有「非國定假日 且 使用者沒選休假」的工作日
+        let gapHasWorkDay = false;
+        for (let j = prev.i + 1; j < curr.i; j++) {
+          const d = new Date(currentMonday);
+          d.setDate(d.getDate() + j);
+          if (!isHoliday(d)) { gapHasWorkDay = true; break; }
+        }
+        if (gapHasWorkDay) {
+          groups.push([...group]);
+          group = [curr];
+        } else {
+          group.push(curr);
+        }
+      }
+      groups.push(group);
+      return groups.map(g => g.map(x => x.dateStr));
+    }
+    const leaveGroups = getLeaveGroups();
+    const hasLeave = leaveGroups.length > 0;
+
     try {
       const payload = {
+        type: 'tickets',
         designerId,
         weekStart: weekStartISO,
         meetingHours,
@@ -1094,11 +1142,23 @@
         baseTickets
       };
 
-      const res = await fetch(webhookUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
+      // 量能票 + 每組休假票同時送
+      const allRequests = [
+        fetch(webhookUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
+      ];
+      for (const group of leaveGroups) {
+        const leavePayload = {
+          type: 'leave',
+          designerId,
+          notionName,
+          leaveStart: group[0],
+          leaveEnd: group[group.length - 1]
+        };
+        allRequests.push(fetch(webhookUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(leavePayload) }));
+      }
+
+      const responses = await Promise.all(allRequests);
+      const res = responses[0]; // 量能票的回應
 
       if (!res.ok) {
         // 嘗試先讀 JSON，可能是 n8n 回傳的結構化錯誤
@@ -1132,7 +1192,8 @@
       const d = String(currentMonday.getDate()).padStart(2,'0');
       const fri = new Date(currentMonday); fri.setDate(fri.getDate()+4);
       const fd = String(fri.getDate()).padStart(2,'0');
-      document.getElementById('done-title').textContent = `成功新增 ${created} 張空白票！`;
+      const leaveNote = hasLeave ? `，含 ${leaveGroups.length} 張休假票` : '';
+      document.getElementById('done-title').textContent = `成功新增 ${created} 張空白票${leaveNote}！`;
       document.getElementById('done-sub').textContent = `${y}.${mo}.${d} — ${y}.${mo}.${fd}`;
       donePanel.style.display = 'flex';
     } catch (err) {
