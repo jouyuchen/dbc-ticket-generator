@@ -861,7 +861,19 @@
   function changeWeek(dir) {
     currentMonday = new Date(currentMonday);
     currentMonday.setDate(currentMonday.getDate() + dir * 7);
+
+    // 重置所有選項為預設值
+    dayOffState = [false, false, false, false, false];
+    // 重置休假日按鈕
+    document.querySelectorAll('#dayoff-toggles .toggle-btn').forEach(btn => btn.classList.remove('off'));
+    // 重置會議時數為 0
+    for (let i = 0; i < 5; i++) {
+      const meet = document.getElementById(`meet-${i}`);
+      if (meet) meet.value = '0';
+    }
+
     document.getElementById('done-panel').style.display = 'none';
+    document.getElementById('status-bar').className = 'status-bar';
     renderWeek();
   }
 
