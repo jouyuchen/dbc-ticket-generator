@@ -1100,7 +1100,7 @@
         const date = new Date(currentMonday);
         date.setDate(date.getDate() + i);
         if (dayOffState[i] && !isHoliday(date)) {
-          leaveDates.push({ i, dateStr: date.toISOString().split('T')[0] });
+          leaveDates.push({ i, dateStr: getDateStr(date) });
         }
       }
       if (!leaveDates.length) return [];
