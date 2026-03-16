@@ -553,6 +553,7 @@
               <option value="1a59b1f2-b650-4d70-a70d-6e0b333e8962">Joy</option>
               <option value="78f9833b-e0d9-4b2a-b9e1-6a8c1b138159">Chelsea Chiu</option>
               <option value="a8c01fe9-c537-4b12-83b3-47eaa06a5576">Mia Chang</option>
+              <option value="3a1207db-2838-41a5-ae44-ecae24363d38">宛芸</option>
               <option value="69cf63ce-3ee5-49f4-a13c-874e96255b68">Fish</option>
               <option value="a279f278-667c-4b08-8eeb-c778fd89f082">Jason Chen</option>
             </select>
@@ -601,11 +602,11 @@
         <div class="field-row">
           <label>每日預設票數 <span style="font-weight:400; color:var(--text-light); font-size:11px;">（未來如需調整預設請聯絡 Joy）</span></label>
           <div class="meeting-inputs">
-            <div class="meeting-input-wrap"><span>MON</span><select id="base-0" onchange="onBaseChange(); recalc()"><option>1</option><option>2</option><option>3</option><option selected>4</option><option>5</option><option>6</option><option>7</option><option>8</option></select></div>
-            <div class="meeting-input-wrap"><span>TUE</span><select id="base-1" onchange="onBaseChange(); recalc()"><option>1</option><option>2</option><option>3</option><option>4</option><option selected>5</option><option>6</option><option>7</option><option>8</option></select></div>
-            <div class="meeting-input-wrap"><span>WED</span><select id="base-2" onchange="onBaseChange(); recalc()"><option>1</option><option>2</option><option>3</option><option>4</option><option selected>5</option><option>6</option><option>7</option><option>8</option></select></div>
-            <div class="meeting-input-wrap"><span>THU</span><select id="base-3" onchange="onBaseChange(); recalc()"><option>1</option><option>2</option><option>3</option><option selected>4</option><option>5</option><option>6</option><option>7</option><option>8</option></select></div>
-            <div class="meeting-input-wrap"><span>FRI</span><select id="base-4" onchange="onBaseChange(); recalc()"><option>1</option><option>2</option><option>3</option><option>4</option><option selected>5</option><option>6</option><option>7</option><option>8</option></select></div>
+            <div class="meeting-input-wrap"><span>MON</span><select id="base-0" onchange="onBaseChange(); recalc()"><option>0</option><option>1</option><option>2</option><option>3</option><option selected>4</option><option>5</option><option>6</option><option>7</option><option>8</option></select></div>
+            <div class="meeting-input-wrap"><span>TUE</span><select id="base-1" onchange="onBaseChange(); recalc()"><option>0</option><option>1</option><option>2</option><option>3</option><option>4</option><option selected>5</option><option>6</option><option>7</option><option>8</option></select></div>
+            <div class="meeting-input-wrap"><span>WED</span><select id="base-2" onchange="onBaseChange(); recalc()"><option>0</option><option>1</option><option>2</option><option>3</option><option>4</option><option selected>5</option><option>6</option><option>7</option><option>8</option></select></div>
+            <div class="meeting-input-wrap"><span>THU</span><select id="base-3" onchange="onBaseChange(); recalc()"><option>0</option><option>1</option><option>2</option><option>3</option><option selected>4</option><option>5</option><option>6</option><option>7</option><option>8</option></select></div>
+            <div class="meeting-input-wrap"><span>FRI</span><select id="base-4" onchange="onBaseChange(); recalc()"><option>0</option><option>1</option><option>2</option><option>3</option><option>4</option><option selected>5</option><option>6</option><option>7</option><option>8</option></select></div>
           </div>
         </div>
 
@@ -685,6 +686,7 @@
     { name: '太郎',          notionName: 'Hawk Chang',  notionId: 'f1bf4e6e-e0d9-4462-a4f2-2129f2c22945', tickets: [3,4,4,4,3] },
     { name: 'Grover Gao',   notionName: 'Grover Gao',  notionId: '2cad872b-594c-8107-830f-00022cb17db7', tickets: [3,2,3,2,2] },
     { name: 'Alan',         notionName: 'Alan',        notionId: '173d872b-594c-81ae-ad6f-000279032dac', tickets: [3,3,3,3,3] },
+    { name: '宛芸',         notionName: 'WanYun Wu',   notionId: '3a1207db-2838-41a5-ae44-ecae24363d38', tickets: [0,1,1,0,0] },
     { name: '哲均',          notionName: '哲均',         notionId: 'cb682dc4-4099-42b8-ae35-240ed7789cd8', tickets: [6,6,5,5,4] },
     { name: 'Chelsea Chiu', notionName: 'Chelsea Chiu',notionId: '78f9833b-e0d9-4b2a-b9e1-6a8c1b138159', tickets: [4,4,4,4,4] },
     { name: 'Mia Chang',    notionName: 'Mia Chang',   notionId: 'a8c01fe9-c537-4b12-83b3-47eaa06a5576', tickets: miaTickets },
@@ -833,7 +835,7 @@
   const DAY_ZH = ['週一', '週二', '週三', '週四', '週五'];
 
   function getBaseTickets(i) {
-    return parseInt(document.getElementById(`base-${i}`)?.value) || [4,5,5,4,5][i];
+    const v = parseInt(document.getElementById(`base-${i}`)?.value); return isNaN(v) ? [4,5,5,4,5][i] : v;
   }
 
   let currentMonday = getThisMonday();
