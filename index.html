@@ -1098,15 +1098,8 @@
       return sum + calcTickets(baseTickets[i], meetingHours[i]);
     }, 0);
 
-    if (totalTickets === 0) {
-      setStatus('error', '⚠ 本週全部請假，無票可建立');
-      return;
-    }
-
-    setLoading(true);
-    setStatus('loading', '<div class="spinner" style="display:block;width:13px;height:13px;border:2px solid rgba(90,106,122,0.3);border-top-color:#5A6A7A;border-radius:50%;animation:spin 0.7s linear infinite;flex-shrink:0;margin-top:1px;"></div> 正在呼叫 N8N，建立 ' + totalTickets + ' 張票…');
-
     // ── 計算休假票群組（國定假日直接跳過，前後請假算同一組）──
+    // 提前計算，讓 totalTickets === 0 時也能判斷是否有休假票
     function getLeaveGroups() {
       // 先收集所有「使用者選休假 且 非國定假日」的日期
       const leaveDates = [];
@@ -1146,6 +1139,18 @@
     const leaveGroups = getLeaveGroups();
     const hasLeave = leaveGroups.length > 0;
 
+    // 量能票 0 且沒有休假票 → 真的沒事可做
+    if (totalTickets === 0 && !hasLeave) {
+      setStatus('error', '⚠ 本週全部為國定假日，無票可建立');
+      return;
+    }
+
+    setLoading(true);
+    const _loadingMsg = totalTickets === 0
+      ? `正在呼叫 N8N，建立 ${leaveGroups.length} 張休假票…`
+      : `正在呼叫 N8N，建立 ${totalTickets} 張量能票${hasLeave ? ` + ${leaveGroups.length} 張休假票` : ''}…`;
+    setStatus('loading', `<div class="spinner" style="display:block;width:13px;height:13px;border:2px solid rgba(90,106,122,0.3);border-top-color:#5A6A7A;border-radius:50%;animation:spin 0.7s linear infinite;flex-shrink:0;margin-top:1px;"></div> ${_loadingMsg}`);
+
     try {
       // 國定假日也合併進 dayOff，讓 n8n 正確跳過
       const dayOffWithHolidays = [0,1,2,3,4].map(i => {
@@ -1163,10 +1168,10 @@
         baseTickets
       };
 
-      // 量能票 + 每組休假票同時送
-      const allRequests = [
-        fetch(webhookUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
-      ];
+      // 全休假時只送休假票，不送量能票（避免 n8n 誤判「已新增過」）
+      const allRequests = totalTickets > 0
+        ? [fetch(webhookUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })]
+        : [];
       for (const group of leaveGroups) {
         const leavePayload = {
           type: 'leave',
@@ -1179,10 +1184,11 @@
       }
 
       const responses = await Promise.all(allRequests);
-      const res = responses[0]; // 量能票的回應
+
+      // 全休假時沒有量能票 response，改檢查第一個休假票 response
+      const res = responses[0];
 
       if (!res.ok) {
-        // 嘗試先讀 JSON，可能是 n8n 回傳的結構化錯誤
         const data = await res.json().catch(() => null);
         if (data && data.error) {
           throw new Error(data.error);
@@ -1193,13 +1199,14 @@
 
       const data = await res.json().catch(() => ({}));
 
-      // n8n 回傳 success: false 或有 error 欄位時擋住
-      if (data.success === false || data.error) {
+      // 全休假時 n8n 只回傳休假票結果，不會有 success: true，只要沒 error 就算成功
+      if (data.error) {
         throw new Error(data.error || data.message || 'N8N workflow 內部錯誤');
       }
-
-      // 確認 created 必須 > 0
-      if (data.created !== undefined && data.created === 0) {
+      if (totalTickets > 0 && data.success !== true) {
+        throw new Error('N8N workflow 沒有正確回應，請檢查執行記錄');
+      }
+      if (totalTickets > 0 && data.created !== undefined && data.created === 0) {
         throw new Error('N8N 回報建立數為 0，請檢查 workflow 執行記錄');
       }
 
@@ -1214,7 +1221,10 @@
       const fri = new Date(currentMonday); fri.setDate(fri.getDate()+4);
       const fd = String(fri.getDate()).padStart(2,'0');
       const leaveNote = hasLeave ? `，含 ${leaveGroups.length} 張休假票` : '';
-      document.getElementById('done-title').textContent = `成功新增 ${created} 張空白票${leaveNote}！`;
+      const doneTitle = created === 0
+        ? `成功新增 ${leaveGroups.length} 張休假票！`
+        : `成功新增 ${created} 張空白票${leaveNote}！`;
+      document.getElementById('done-title').textContent = doneTitle;
       document.getElementById('done-sub').textContent = `${y}.${mo}.${d} — ${y}.${mo}.${fd}`;
       donePanel.style.display = 'flex';
     } catch (err) {
