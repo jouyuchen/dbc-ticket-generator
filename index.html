@@ -625,6 +625,21 @@
           <label>休假日 <span style="font-weight:400; color:var(--text-light); font-size:11px;">（點選後，會直接移除預設的票數）</span></label>
           <div class="dayoff-toggles" id="dayoff-toggles"></div>
         </div>
+
+        <div class="field-row" id="proxy-field" style="display:none;">
+          <label>休假代理人 <span style="font-weight:400; color:var(--text-light); font-size:11px;">（選填）</span></label>
+          <select id="proxy-select">
+            <option value="">— 不指定 —</option>
+            <option value="1a59b1f2-b650-4d70-a70d-6e0b333e8962">Joy</option>
+            <option value="69cf63ce-3ee5-49f4-a13c-874e96255b68">Fish</option>
+            <option value="a279f278-667c-4b08-8eeb-c778fd89f082">Jason</option>
+            <option value="f1bf4e6e-e0d9-4462-a4f2-2129f2c22945">太郎</option>
+            <option value="2cad872b-594c-8107-830f-00022cb17db7">Grover</option>
+            <option value="173d872b-594c-81ae-ad6f-000279032dac">Alan</option>
+            <option value="3a1207db-2838-41a5-ae44-ecae24363d38">宛芸</option>
+            <option value="cb682dc4-4099-42b8-ae35-240ed7789cd8">哲均</option>
+          </select>
+        </div>
       </div>
 
       <!-- 總票數摘要 -->
@@ -991,10 +1006,17 @@
       btn.onclick = () => {
         dayOffState[i] = !dayOffState[i];
         btn.classList.toggle('off', dayOffState[i]);
+        updateProxyField();
         recalc();
       };
       wrap.appendChild(btn);
     });
+  }
+
+  function updateProxyField() {
+    const hasAnyDayOff = dayOffState.some(v => v);
+    document.getElementById('proxy-field').style.display = hasAnyDayOff ? 'block' : 'none';
+    if (!hasAnyDayOff) document.getElementById('proxy-select').value = '';
   }
 
   // ── Webhook URL persistence ──
@@ -1169,6 +1191,7 @@
       };
 
       // 全休假時只送休假票，不送量能票（避免 n8n 誤判「已新增過」）
+      const proxyId = document.getElementById('proxy-select')?.value || '';
       const allRequests = totalTickets > 0
         ? [fetch(webhookUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })]
         : [];
@@ -1178,7 +1201,8 @@
           designerId,
           notionName,
           leaveStart: group[0],
-          leaveEnd: group[group.length - 1]
+          leaveEnd: group[group.length - 1],
+          ...(proxyId ? { proxyId } : {})
         };
         allRequests.push(fetch(webhookUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(leavePayload) }));
       }
