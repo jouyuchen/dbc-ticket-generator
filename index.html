@@ -550,12 +550,11 @@
             <label>負責設計師</label>
             <select id="designer-select" onchange="onDesignerChange()">
               <option value="">— 請選擇 —</option>
-              <option value="1a59b1f2-b650-4d70-a70d-6e0b333e8962">Joy</option>
               <option value="78f9833b-e0d9-4b2a-b9e1-6a8c1b138159">Chelsea Chiu</option>
               <option value="a8c01fe9-c537-4b12-83b3-47eaa06a5576">Mia Chang</option>
-              <option value="3a1207db-2838-41a5-ae44-ecae24363d38">宛芸</option>
               <option value="69cf63ce-3ee5-49f4-a13c-874e96255b68">Fish</option>
               <option value="a279f278-667c-4b08-8eeb-c778fd89f082">Jason Chen</option>
+              <option value="310d872b-594c-818f-a3b4-0002ed5fb6b5">Sky</option>
             </select>
           </div>
         </div>
@@ -630,13 +629,10 @@
           <label>休假代理人 <span style="font-weight:400; color:var(--text-light); font-size:11px;">（選填）</span></label>
           <select id="proxy-select">
             <option value="">— 不指定 —</option>
-            <option value="1a59b1f2-b650-4d70-a70d-6e0b333e8962">Joy</option>
             <option value="69cf63ce-3ee5-49f4-a13c-874e96255b68">Fish</option>
             <option value="a279f278-667c-4b08-8eeb-c778fd89f082">Jason</option>
-            <option value="f1bf4e6e-e0d9-4462-a4f2-2129f2c22945">太郎</option>
             <option value="2cad872b-594c-8107-830f-00022cb17db7">Grover</option>
             <option value="173d872b-594c-81ae-ad6f-000279032dac">Alan</option>
-            <option value="3a1207db-2838-41a5-ae44-ecae24363d38">宛芸</option>
             <option value="cb682dc4-4099-42b8-ae35-240ed7789cd8">哲均</option>
           </select>
         </div>
@@ -691,20 +687,25 @@
   const NOTION_DB_ID = 'c5fb7caccbb44973bf5e3be171effbc4';
   const DEFAULT_WEBHOOK_URL = 'https://alleypin.app.n8n.cloud/webhook/dbc-generate-tickets';
 
-  const today = new Date();
-  const miaTickets = (today >= new Date('2026-04-20')) ? [2,2,2,2,2] : [1,1,1,1,1];
+  // Mia 的預設票數會依「目前選擇的週次」而非今天日期變動
+  // 用字串比較日期（而非 Date 物件），避免 new Date('YYYY-MM-DD') 被解讀成 UTC 午夜、跟本地午夜的 currentMonday 差 8 小時的時區地雷
+  function getMiaTickets(monday) {
+    const s = getDateStr(monday);
+    if (s >= '2026-10-26') return [2,2,2,2,2];
+    if (s >= '2026-08-03') return [1,1,1,1,1];
+    if (s >= '2026-04-20') return [2,2,2,2,2];
+    return [1,1,1,1,1];
+  }
 
   const DESIGNERS = [
-    { name: 'Joy',          notionName: 'Joy',         notionId: '1a59b1f2-b650-4d70-a70d-6e0b333e8962', tickets: [4,5,5,4,5] },
     { name: 'Fish',         notionName: 'fish chiu',   notionId: '69cf63ce-3ee5-49f4-a13c-874e96255b68', tickets: [4,5,5,5,5] },
     { name: 'Jason',        notionName: 'Jason Chen',  notionId: 'a279f278-667c-4b08-8eeb-c778fd89f082', tickets: [4,5,5,5,5] },
-    { name: '太郎',          notionName: 'Hawk Chang',  notionId: 'f1bf4e6e-e0d9-4462-a4f2-2129f2c22945', tickets: [3,4,4,4,3] },
     { name: 'Grover Gao',   notionName: 'Grover Gao',  notionId: '2cad872b-594c-8107-830f-00022cb17db7', tickets: [3,2,3,2,2] },
     { name: 'Alan',         notionName: 'Alan',        notionId: '173d872b-594c-81ae-ad6f-000279032dac', tickets: [3,3,3,3,3] },
-    { name: '宛芸',         notionName: 'WanYun Wu',   notionId: '3a1207db-2838-41a5-ae44-ecae24363d38', tickets: [0,1,1,0,0] },
     { name: '哲均',          notionName: '哲均',         notionId: 'cb682dc4-4099-42b8-ae35-240ed7789cd8', tickets: [6,6,5,5,4] },
     { name: 'Chelsea Chiu', notionName: 'Chelsea Chiu',notionId: '78f9833b-e0d9-4b2a-b9e1-6a8c1b138159', tickets: [4,4,4,4,4] },
-    { name: 'Mia Chang',    notionName: 'Mia Chang',   notionId: 'a8c01fe9-c537-4b12-83b3-47eaa06a5576', tickets: miaTickets },
+    { name: 'Mia Chang',    notionName: 'Mia Chang',   notionId: 'a8c01fe9-c537-4b12-83b3-47eaa06a5576', ticketsFn: getMiaTickets },
+    { name: 'Sky',          notionName: '天流 陳',      notionId: '310d872b-594c-818f-a3b4-0002ed5fb6b5', tickets: [1,1,1,1,1] },
   ];
 
   // 台灣 2026 國定假日（行政院人事行政總處官方公告，僅週一到週五）
@@ -726,6 +727,25 @@
     '2026-10-09', // 國慶日補假（10/10週六→補10/9週五）
     '2026-10-26', // 台灣光復節補假（10/25週日→補10/26週一）
     '2026-12-25', // 行憲紀念日（週五）
+
+    // 2027
+    '2027-01-01', // 元旦（週五）
+    '2027-02-04', // 春節前補假／小年夜
+    '2027-02-05', // 春節除夕
+    '2027-02-08', // 春節初三
+    '2027-02-09', // 春節補假
+    '2027-02-10', // 春節補假
+    '2027-03-01', // 228和平紀念日補假（2/28週日→補3/1週一）
+    '2027-04-05', // 清明節
+    '2027-04-06', // 兒童節補假（4/4週日→補4/6週二）
+    '2027-04-30', // 勞動節補假（5/1週六→補4/30週五）
+    '2027-06-09', // 端午節（週三）
+    '2027-09-15', // 中秋節（週三）
+    '2027-09-28', // 孔子誕辰/教師節（週二）
+    '2027-10-11', // 國慶日補假（10/10週日→補10/11週一）
+    '2027-10-25', // 台灣光復節（週一）
+    '2027-12-24', // 行憲紀念日補假（12/25週六→補12/24週五）
+    '2027-12-31', // 2028元旦補假（1/1週六→補12/31週五）
   ]);
 
   // ── Mode init ──
@@ -755,6 +775,24 @@
     `).join('');
   }
 
+  // 套用設計師的預設票數（Mia 是 ticketsFn，依目前選擇的週次計算；其他人是固定 tickets）
+  function applyDesignerTickets(designer) {
+    if (!designer) return;
+    const tickets = designer.ticketsFn ? designer.ticketsFn(currentMonday) : designer.tickets;
+    if (!tickets) return;
+    tickets.forEach((val, i) => {
+      const el = document.getElementById(`base-${i}`);
+      if (el) el.value = val;
+    });
+  }
+
+  function getCurrentDesigner() {
+    const id = IS_ADMIN
+      ? document.getElementById('designer-select')?.value
+      : (localStorage.getItem('dbc_self_id') || '');
+    return DESIGNERS.find(d => d.notionId === id);
+  }
+
   function selectDesigner(notionId) {
     // 更新卡片 UI
     document.querySelectorAll('.designer-card').forEach(c => {
@@ -762,12 +800,7 @@
     });
     // 套用票數
     const designer = DESIGNERS.find(d => d.notionId === notionId);
-    if (designer?.tickets) {
-      designer.tickets.forEach((val, i) => {
-        const el = document.getElementById(`base-${i}`);
-        if (el) el.value = val;
-      });
-    }
+    applyDesignerTickets(designer);
     localStorage.setItem('dbc_self_id', notionId);
     // 移除佔位卡片
     const placeholder = document.querySelector('.placeholder-card');
@@ -837,11 +870,8 @@
   function onDesignerChange() {
     const sel = document.getElementById('designer-select');
     const designer = DESIGNERS.find(d => d.notionId === sel.value);
-    if (designer?.tickets) {
-      designer.tickets.forEach((val, i) => {
-        const el = document.getElementById(`base-${i}`);
-        if (el) el.value = val;
-      });
+    if (designer) {
+      applyDesignerTickets(designer);
       recalc();
     }
   }
@@ -888,6 +918,10 @@
       const meet = document.getElementById(`meet-${i}`);
       if (meet) meet.value = '0';
     }
+
+    // 若目前設計師的預設票數會依週次變動（例如 Mia），重新套用當週的預設值
+    const currentDesigner = getCurrentDesigner();
+    if (currentDesigner?.ticketsFn) applyDesignerTickets(currentDesigner);
 
     document.getElementById('done-panel').style.display = 'none';
     document.getElementById('status-bar').className = 'status-bar';
